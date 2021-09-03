@@ -84,13 +84,18 @@ def define_generator():
 gen=define_generator()
 #gen=keras.models.load_model('gen.h5')
 
-dm=keras.models.load_model('dm6.h5')
-
-
-
+dm=keras.models.load_model('dm.h5')
+fil=np.zeros((32,32,1,3),dtype=np.float32)
+for i in range(fil.shape[0]):
+    for j in range(fil.shape[1]):
+        fil[i,j,:,:] = 1-((0.5-((i+1)/(fil.shape[0]+1)))**2+(0.5-((j+1)/(fil.shape[1]+1)))**2)**(0.5)
 def simLoss(y_true,y_pred):    
+    predFil = tf.nn.conv2d(y_pred, fil, strides=[1, 4, 4, 1], padding='SAME')
+    trueFil = tf.nn.conv2d(y_true, fil, strides=[1, 4, 4, 1], padding='SAME')
+    out=tf.reduce_mean(tf.abs(trueFil-predFil),axis=(1,2,3))
+    out=out/(out+1)
     
-    return tf.reduce_mean(tf.abs(y_true-y_pred),axis=(1,2,3))+tf.reduce_mean(1-dm(y_pred))
+    return tf.math.square(out)+tf.math.square(1-dm(y_pred))
 
 
 es = keras.callbacks.EarlyStopping(monitor='loss', mode='min', verbose=1, patience=1)
@@ -107,7 +112,7 @@ for i in range(itrn):
     gen.compile(optimizer='adam',loss=simLoss)
 
     
-    gen.fit(x,x,epochs=100,shuffle=True,callbacks=[esg])
+    gen.fit(x,x,epochs=50,shuffle=True,callbacks=[esg])
     xr=get_random_real_imgs(6)
     r=gen.predict(xr)
     
@@ -142,7 +147,7 @@ for i in range(itrn):
         dm.fit(x,y,epochs=10,shuffle=True,callbacks=[es])
         
     
-    gen.save('gen6/gen_'+str(i)+'.h5')
+    gen.save('gen/gen_'+str(i)+'.h5')
     del x,y,r
     
 gen.save('gen.h5')
