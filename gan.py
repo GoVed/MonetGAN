@@ -93,9 +93,9 @@ def simLoss(y_true,y_pred):
     predFil = tf.nn.conv2d(y_pred, fil, strides=[1, 4, 4, 1], padding='SAME')
     trueFil = tf.nn.conv2d(y_true, fil, strides=[1, 4, 4, 1], padding='SAME')
     out=tf.reduce_mean(tf.abs(trueFil-predFil),axis=(1,2,3))
-    out=out/(out+1)
+    out=out/(out+100)
     
-    return tf.math.square(out)+tf.math.square(1-dm(y_pred))
+    return (tf.math.abs(out)*3)+tf.math.abs(1-dm(y_pred))
 
 
 es = keras.callbacks.EarlyStopping(monitor='loss', mode='min', verbose=1, patience=1)
